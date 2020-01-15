@@ -168,7 +168,7 @@ func NewWebSocketOrRestReverseProxy(u *url.URL, opts *Options, auth hmacauth.Hma
 	}
 
 	// this should give us a wss:// scheme if the url is https:// based.
-	var wsProxy *wsutil.ReverseProxy = nil
+	var wsProxy *httputil.ReverseProxy = nil
 	if opts.ProxyWebSockets {
 		wsScheme := "ws" + strings.TrimPrefix(u.Scheme, "http")
 		wsURL := &url.URL{Scheme: wsScheme, Host: u.Host}
