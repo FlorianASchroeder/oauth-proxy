@@ -87,7 +87,6 @@ type OAuthProxy struct {
 type UpstreamProxy struct {
 	upstream  string
 	handler   http.Handler
-	wsHandler http.Handler
 	auth      hmacauth.HmacAuth
 }
 
@@ -99,7 +98,6 @@ func (u *UpstreamProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	u.handler.ServeHTTP(w, r)
-
 }
 
 func NewReverseProxy(target *url.URL, upstreamFlush time.Duration, rootCAs []string) (*httputil.ReverseProxy, error) {
@@ -108,7 +106,7 @@ func NewReverseProxy(target *url.URL, upstreamFlush time.Duration, rootCAs []str
 
 	transport := &http.Transport{
 		MaxIdleConnsPerHost: 500,
-		IdleConnTimeout:     1 * time.Minute,
+		IdleConnTimeout:     0, //no timeout
 	}
 	if len(rootCAs) > 0 {
 		pool, err := util.GetCertPool(rootCAs, false)
@@ -153,6 +151,7 @@ func NewFileServer(path string, filesystemPath string) (proxy http.Handler) {
 
 func NewWebSocketOrRestReverseProxy(u *url.URL, opts *Options, auth hmacauth.HmacAuth) (restProxy http.Handler) {
 	u.Path = ""
+	// This works for http(s) and websockets since go 1.12
 	proxy, err := NewReverseProxy(u, opts.UpstreamFlush, opts.UpstreamCAs)
 	if err != nil {
 		log.Fatal("Failed to initialize Reverse Proxy: ", err)
@@ -163,18 +162,7 @@ func NewWebSocketOrRestReverseProxy(u *url.URL, opts *Options, auth hmacauth.Hma
 		setProxyDirector(proxy)
 	}
 
-	// this should give us a wss:// scheme if the url is https:// based.
-	var wsProxy *httputil.ReverseProxy = nil
-	if opts.ProxyWebSockets {
-		wsScheme := "ws" + strings.TrimPrefix(u.Scheme, "http")
-		wsURL := &url.URL{Scheme: wsScheme, Host: u.Host}
-		wsProxy, err = NewReverseProxy(wsURL, opts.UpstreamFlush, opts.UpstreamCAs)
-		if err != nil {
-			log.Fatal("Failed to initialize Reverse Proxy: ", err)
-		}
-
-	}
-	return &UpstreamProxy{u.Host, proxy, wsProxy, auth}
+	return &UpstreamProxy{u.Host, proxy, auth}
 }
 
 func NewOAuthProxy(opts *Options, validator func(string) bool) *OAuthProxy {
@@ -198,7 +186,7 @@ func NewOAuthProxy(opts *Options, validator func(string) bool) *OAuthProxy {
 			}
 			log.Printf("mapping path %q => file system %q", path, u.Path)
 			proxy := NewFileServer(path, u.Path)
-			serveMux.Handle(path, &UpstreamProxy{path, proxy, nil, nil})
+			serveMux.Handle(path, &UpstreamProxy{path, proxy, nil})
 		default:
 			panic(fmt.Sprintf("unknown upstream protocol %s", u.Scheme))
 		}
