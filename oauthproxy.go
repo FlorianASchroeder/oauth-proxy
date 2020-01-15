@@ -106,7 +106,7 @@ func NewReverseProxy(target *url.URL, upstreamFlush time.Duration, rootCAs []str
 
 	transport := &http.Transport{
 		MaxIdleConnsPerHost: 500,
-		IdleConnTimeout:     0, //no timeout
+		IdleConnTimeout:     300 * time.Minute, //no timeout
 	}
 	if len(rootCAs) > 0 {
 		pool, err := util.GetCertPool(rootCAs, false)
