@@ -172,14 +172,9 @@ func NewWebSocketOrRestReverseProxy(u *url.URL, opts *Options, auth hmacauth.Hma
 	if opts.ProxyWebSockets {
 		wsScheme := "ws" + strings.TrimPrefix(u.Scheme, "http")
 		wsURL := &url.URL{Scheme: wsScheme, Host: u.Host}
-		wsProxy = wsutil.NewSingleHostReverseProxy(wsURL)
-
-		if wsScheme == "wss" && len(opts.UpstreamCAs) > 0 {
-			pool, err := util.GetCertPool(opts.UpstreamCAs, false)
-			if err != nil {
-				log.Fatal("Failed to fetch CertPool: ", err)
-			}
-			wsProxy.TLSClientConfig = oscrypto.SecureTLSConfig(&tls.Config{RootCAs: pool})
+		wsProxy, err = NewReverseProy(wsURL, opts.UpstreamFlush, opts.UpstreamCAs)
+		if err != nil {
+			log.Fatal("Failed to initialize Reverse Proxy: ", err)
 		}
 
 	}
