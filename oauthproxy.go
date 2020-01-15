@@ -172,7 +172,7 @@ func NewWebSocketOrRestReverseProxy(u *url.URL, opts *Options, auth hmacauth.Hma
 	if opts.ProxyWebSockets {
 		wsScheme := "ws" + strings.TrimPrefix(u.Scheme, "http")
 		wsURL := &url.URL{Scheme: wsScheme, Host: u.Host}
-		wsProxy, err = NewReverseProy(wsURL, opts.UpstreamFlush, opts.UpstreamCAs)
+		wsProxy, err = NewReverseProxy(wsURL, opts.UpstreamFlush, opts.UpstreamCAs)
 		if err != nil {
 			log.Fatal("Failed to initialize Reverse Proxy: ", err)
 		}
