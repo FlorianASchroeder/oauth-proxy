@@ -18,7 +18,6 @@ import (
 	"golang.org/x/net/http2"
 
 	"github.com/18F/hmacauth"
-	"github.com/yhat/wsutil"
 
 	oscrypto "github.com/openshift/library-go/pkg/crypto"
 
